@@ -1,4 +1,3 @@
-from typing import final
 import requests
 from .md5 import md5
 import urllib.request as urllib2
@@ -7,8 +6,8 @@ import speedtest
 import json
 
 # program login wifi via webclient Mikrotik
-# by ihsan fajar ramadhan
-# https://github.com/castrix
+# Contributors Ihsan Fajar Ramadhan, Marchel-Ace
+# https://github.com/castrix, https://github.com/Marchel-Ace
 # webclient login code
 
 
@@ -40,14 +39,18 @@ class MikrotikLogin:
         you know what does it mean~
         """
         if self.check_login_status():
-            print("Success!")
+            print("Already logged in!")
             return True
         r = requests.get(self.url).text  # requesting the url text
         key1 = ""
         key2 = ""
         if self.minkey1 == 0 or self.maxkey1 == 0 or self.minkey2 == 0 or self.maxkey2 == 0:
             a = "document.sendin.password.value"
-            b = r.index(a)
+            try:
+                b = r.index(a)
+            except:
+                print("Error, url format is not right. Please make sure you use the right url format: http://url/login")
+                return False
             key1 = r[b+len(a)+11:b+len(a)+15]
             key2 = r[b+len(a)+52:b+len(a)+116]
         else:
@@ -62,11 +65,14 @@ class MikrotikLogin:
         finallogin = self.url+"?username="+self.username + \
             "&password="+encryptmd5  # wrap all the variables
         response = requests.post(finallogin).text  # make the final requests
+        print("Logging in ...")
         if self.check_login_status():
-            print("Success!")
+            print("Success! Logged in.")
+            self.check_internet()
             return True
         else:
             print("Something is wrong!")
+            print("Please make sure you use the right url format: http://url/login")
             return False
 
     def do_logout(self):
@@ -76,11 +82,13 @@ class MikrotikLogin:
         url = urlparse(self.url)
         final_url = f'{url.scheme}://{url.netloc}/logout'
         req = requests.get(final_url)
+        print("Logging out ...")
         if self.check_login_status():
-            print("Success!")
+            print("Something is wrong!")
             return True
         else:
-            print("Something is wrong!")
+            print("Success! Logged out.")
+            self.check_internet()
             return False
 
     def check_login_status(self):
@@ -99,22 +107,24 @@ class MikrotikLogin:
 
     def check_internet(self):
         """
-        Check internet connection, will return True 
-        if internet connection is detected and False if not 
+        Check internet connection, will return True
+        if internet connection is detected and False if not
         """
+        print("Checking internet connection ...")
         try:
             response = urllib2.urlopen('http://216.58.192.142', timeout=1)
             self.is_connected = True
             return True
         except Exception as e:
+            print("error")
             print(e)
             self.is_connected = False
             return False
 
     def speed_test(self, share=False):
         """
-        set share True if you want 
-        get image of your speedtest result 
+        set share True if you want
+        get image of your speedtest result
         """
         status = {}
         if self.check_internet():
